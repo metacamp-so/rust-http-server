@@ -1,4 +1,4 @@
-use super::method::Method;
+use super::method::{Method, MethodError};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
@@ -30,6 +30,8 @@ impl TryFrom<&[u8]> for Request { // we are taking in a ref byte array
       return Err(ParseError::InvalidProtocol);
     }
 
+    let method: Method = method.parse()?;
+
     unimplemented!()
   }
 }
@@ -49,6 +51,12 @@ pub enum ParseError {
   InvalidEncoding,
   InvalidProtocol,
   InvalidMethod,
+}
+
+impl From<MethodError> for ParseError {
+  fn from(_: MethodError) -> Self{
+    Self::InvalidMethod
+  }
 }
 
 impl From<Utf8Error> for ParseError {
