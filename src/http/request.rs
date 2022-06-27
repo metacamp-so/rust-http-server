@@ -13,12 +13,35 @@ pub struct Request {
 impl TryFrom<&[u8]> for Request { // we are taking in a ref byte array
   type Error = ParseError;
 
-  // GET /search?name=abc&sort=1 HTTP/1.1
+  // GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
   fn try_from(value: &[u8]) -> Result <Self, Self::Error> {
 
     let request = str::from_utf8(value)?;
+
+    match get_next_word(request) {
+      Some((method, request)) => {},
+      None => return Err(ParseError::InvalidRequest),
+    }
+    let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+    let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+    let (protocol, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+
+    if protocol != "HTTP/1.1" {
+      return Err(ParseError::InvalidProtocol);
+    }
+
     unimplemented!()
   }
+}
+
+fn get_next_word(request: &str) -> Option<(&str, &str)> {
+  for (i, c) in request.chars().enumerate() { //enumerate yields us the index
+    if c == ' ' || c== '\r' {
+      return Some((&request[..i], &request[i + 1..])); // we can add 1 byte here as we are skipping a space
+    }
+  }
+
+  None
 }
 
 pub enum ParseError {
