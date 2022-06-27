@@ -1,4 +1,5 @@
 use super::method::{Method, MethodError};
+use super::{QueryString, QueryStringValue};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
@@ -6,7 +7,7 @@ use std::str::{self, Utf8Error};
 
 pub struct Request<'buf> { //implement lifetime to make sure that the fields don't outlive the struct
   path: &'buf str,
-  query_string: Option<&'buf str>, // should be optional not mandatory
+  query_string: Option<QueryString<'buf>>, // should be optional not mandatory
   method: Method, // represent as enum we introduced common methods
 }
 
@@ -35,7 +36,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> { // we are taking in a ref byt
     let mut query_string = None;
 
     if let Some(i) = path.find('?') {
-      query_string = Some(&path[i + 1..]);
+      query_string = Some(QueryString::from(&path[i + 1..]));
       path = &path[..i]
     }
 
