@@ -4,17 +4,17 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str::{self, Utf8Error};
 
-pub struct Request {
-  path: String,
-  query_string: Option<String>, // should be optional not mandatory
+pub struct Request<'buf> { //implement lifetime to make sure that the fields don't outlive the struct
+  path: &'buf str,
+  query_string: Option<&'buf str>, // should be optional not mandatory
   method: Method, // represent as enum we introduced common methods
 }
 
-impl TryFrom<&[u8]> for Request { // we are taking in a ref byte array
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> { // we are taking in a ref byte array
   type Error = ParseError;
 
   // GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
-  fn try_from(value: &[u8]) -> Result <Self, Self::Error> {
+  fn try_from(value: &'buf [u8]) -> Result <Self, Self::Error> {
 
     let request = str::from_utf8(value)?;
 
@@ -23,8 +23,8 @@ impl TryFrom<&[u8]> for Request { // we are taking in a ref byte array
       None => return Err(ParseError::InvalidRequest),
     }
     let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-    let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-    let (protocol, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+    let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+    let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
     if protocol != "HTTP/1.1" {
       return Err(ParseError::InvalidProtocol);
@@ -32,7 +32,18 @@ impl TryFrom<&[u8]> for Request { // we are taking in a ref byte array
 
     let method: Method = method.parse()?;
 
-    unimplemented!()
+    let mut query_string = None;
+
+    if let Some(i) = path.find('?') {
+      query_string = Some(&path[i + 1..]);
+      path = &path[..i]
+    }
+
+    Ok(Self {
+      path,
+      query_string,
+      method
+    })
   }
 }
 
