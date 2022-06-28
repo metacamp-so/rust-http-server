@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
 // a=1&b=2&c&d=&e===&d=7&d=abc
+#[derive(Debug)]
 pub struct QueryString<'buf> {
   data: HashMap<&'buf str, Value<'buf>>,
 }
 
+#[derive(Debug)]
 pub enum Value<'buf> {
   Single(&'buf str),
   Multiple(Vec<&'buf str>),
@@ -28,13 +30,13 @@ impl<'buf> From<&'buf str> for QueryString<'buf> {
       }
 
       data.entry(key)
-        .and_modify(|existing: &mut Value| match existing {
+        .and_modify(|existing: &mut Value| match existing { // else, checks if it has only one value, create vec
           Value::Single(prev_val) => {
             *existing = Value::Multiple(vec![prev_val, val]);
           }
-          Value::Multiple(vec) => vec.push(val)
+          Value::Multiple(vec) => vec.push(val) // push if vector already exists
         })
-        .or_insert(Value::Single(val));
+        .or_insert(Value::Single(val)); // if it doesn't contain key, insert first value
     }
     QueryString { data }
   }

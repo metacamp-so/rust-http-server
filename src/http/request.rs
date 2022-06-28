@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str::{self, Utf8Error};
 
+#[derive(Debug)]
 pub struct Request<'buf> { //implement lifetime to make sure that the fields don't outlive the struct
   path: &'buf str,
   query_string: Option<QueryString<'buf>>, // should be optional not mandatory
