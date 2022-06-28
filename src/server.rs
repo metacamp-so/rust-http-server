@@ -1,6 +1,6 @@
 use std::net::TcpListener;
 use std::convert::TryFrom;
-use std::io::Read;
+use std::io::{Read, Write};
 use crate::http::Request;
 pub struct Server {
   addr: String,
@@ -28,6 +28,7 @@ impl Server {
                 match Request::try_from(&buffer[..]) {//pass in a byte slice because trait is expecting
                   Ok(request) => {
                     dbg!(request);
+                    write!(stream, "HTTP/1.1 404 Not Found\r\n\r\n");
                   },
                   Err(e) => println!("Failed to parse a request: {}", e),
                 }  
